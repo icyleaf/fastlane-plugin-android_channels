@@ -13,8 +13,8 @@ module Fastlane
         FileUtils.cp(apk_file, signed_file.path)
 
         command_args = [apksigner.shellescape, "sign", "--ks-pass", "pass:#{keystore_password}", "--ks", keystore.shellescape]
-        command_args << "--ks-key-alias" << key_alias unless key_alias.empty?
-        command_args << "--key-pass" << "pass:#{key_password}" unless key_password.empty?
+        command_args << "--ks-key-alias" << key_alias unless key_alias.to_s.empty?
+        command_args << "--key-pass" << "pass:#{key_password}" unless key_password.to_s.empty?
         command_args << signed_file.path
         Action.sh(command_args.join(" "), print_command: FastlaneCore::Globals.verbose?)
 
