@@ -38,18 +38,18 @@ module Fastlane
           mask_keys: %i[keystore_password key_password]
         )
 
-        # Helper::AndroidChannelsHelper.packing_apk(apk_file, channels, output_path, {
-        #   apksigner: apksigner,
-        #   apksigner_args: apksigner_args,
-        #   prefix: params[:channel_filename_prefix],
-        #   suffix: params[:channel_filename_suffix],
-        #   verify: params[:verify]
-        # })
+        Helper::AndroidChannelsHelper.packing_apk(apk_file, channels, output_path, {
+          apksigner: apksigner,
+          apksigner_args: apksigner_args,
+          prefix: params[:channel_filename_prefix],
+          suffix: params[:channel_filename_suffix],
+          verify: params[:verify]
+        })
 
-        # total = Dir["#{output_path}/*"].size
-        # UI.success "Packaged done, total: #{total} apk file(s)."
+        total = Dir["#{output_path}/*"].size
+        UI.success "Packaged done, total: #{total} apk file(s)."
 
-        # output_path
+        output_path
       end
 
       def self.description
