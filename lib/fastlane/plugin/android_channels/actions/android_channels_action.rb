@@ -10,6 +10,8 @@ module Fastlane
         apk_file = Helper::AndroidChannelsHelper.determine_apk_file!(params)
         channels = Helper::AndroidChannelsHelper.determine_channels!(params)
         output_path = Helper::AndroidChannelsHelper.determine_output_path!(params)
+        apksigner = Helper::AndroidChannelsHelper.determine_apksigner!(params)
+        apksigner_args = nil
 
         signed = Helper::AndroidChannelsHelper.is_signed?(apk_file)
         summary_params = {
@@ -21,17 +23,12 @@ module Fastlane
 
         unless signed
           keystore = Helper::AndroidChannelsHelper.determine_keystore!(params)
-          apksigner = Helper::AndroidChannelsHelper.determine_apksigner!(params)
-          keystore_password = Helper::AndroidChannelsHelper.determine_keystore_password!(params)
-          key_alias = params[:key_alias]
-          key_password = params[:key_password]
+          apksigner_args = Helper::AndroidChannelsHelper.apksigner_args(params)
 
           summary_params.merge!({
-            apksigner: apksigner,
             keystore: keystore,
-            keystore_password: keystore_password,
-            key_alias: key_alias,
-            key_password: key_password
+            apksigner: apksigner,
+            apksigner_args: apksigner_args
           })
         end
 
@@ -41,26 +38,26 @@ module Fastlane
           mask_keys: %i[keystore_password key_password]
         )
 
-        if signed
-          UI.verbose "Packaging channel apk ..."
-          Helper::AndroidChannelsHelper.write_apk_with_channels(output_path, apk_file, channels)
-        else
-          UI.verbose "Signing apk ..."
-          signed_file = Helper::AndroidChannelsHelper.sign_apk(apksigner, keystore, keystore_password, apk_file, key_alias, key_password)
+        Helper::AndroidChannelsHelper.packing_apk(apk_file, channels, output_path, {
+          apksigner: apksigner,
+          apksigner_args: apksigner_args,
+          prefix: params[:channel_filename_prefix],
+          suffix: params[:channel_filename_suffix],
+          verify: params[:verify]
+        })
 
-          UI.verbose "Packaging channel apk ..."
-          Helper::AndroidChannelsHelper.write_apk_with_channels(output_path, signed_file.path, channels)
-          signed_file.unlink
-        end
+        # total = Dir["#{output_path}/*"].size
+        # UI.success "Packaged done, total: #{total} apk file(s)."
 
-        total = Dir["#{output_path}/*"].size
-        UI.success "Packaged done, total: #{total} apk file(s)."
-
-        output_path
+        # output_path
       end
 
       def self.description
-        "Package unsign apk with channels"
+        "Package apk file with channels"
+      end
+
+      def self.details
+        "Write empty file to META-INF with channel in general way"
       end
 
       def self.authors
@@ -71,9 +68,6 @@ module Fastlane
         'The output of signed apk path'
       end
 
-      def self.details
-        "Apply for QYER mobile team for now"
-      end
 
       def self.available_options
         [
@@ -88,6 +82,16 @@ module Fastlane
                                description: "The key password of keystore",
                                   optional: false,
                                       type: Array),
+          FastlaneCore::ConfigItem.new(key: :channel_filename_prefix,
+                                  env_name: "ANDROID_CHANNELS_CHANNEL_FILENAME_PREFIX",
+                               description: "The prefix of empty channel file to write to METE-INF folder",
+                                  optional: true,
+                                      type: String),
+          FastlaneCore::ConfigItem.new(key: :channel_filename_suffix,
+                                  env_name: "ANDROID_CHANNELS_CHANNEL_FILENAME_SUFFIX",
+                               description: "The suffix of empty channel file to write to METE-INF folder",
+                                  optional: true,
+                                      type: String),
           FastlaneCore::ConfigItem.new(key: :output_path,
                                   env_name: "ANDROID_CHANNELS_OUTPUT_PATH",
                                description: "The output path of channels apk files",
@@ -126,6 +130,17 @@ module Fastlane
                                description: "The key password of keystore",
                                   optional: true,
                                       type: String),
+          FastlaneCore::ConfigItem.new(key: :apksigner_extra_args,
+                                  env_name: "ANDROID_CHANNELS_APKSIGNER_EXTRA_ARGS",
+                               description: "The extra arguments of apksigner command",
+                                  optional: true,
+                                      type: String),
+          FastlaneCore::ConfigItem.new(key: :verify,
+                                  env_name: "ANDROID_CHANNELS_VERIFY",
+                               description: "Do or not verify signed apk file",
+                                  optional: true,
+                             default_value: false,
+                                      type: Boolean),
           FastlaneCore::ConfigItem.new(key: :clean,
                                   env_name: "ANDROID_CHANNELS_CLEAN",
                                description: "Should the signed files to be clean before signing it?",
@@ -146,16 +161,24 @@ module Fastlane
       def self.example_code
         [
           'android_channels(
-            apk_file: "app-signed.apk",
+            apk_file: "app.apk",
             channels: ["xiaomi", "huawei", "qq"],
             output_path: "/tmp/output_path",
+            verify: true
           )',
           'android_channels(
             apk_file: "app-unsigned.apk",
-            signed: false,
             channels: ["xiaomi", "huawei", "qq"],
             keystore: "release.keystore",
             keystore_password: "p@ssword",
+            clean: true
+          )',
+          'android_channels(
+            apk_file: "app-unsigned.apk",
+            channels: ["xiaomi", "huawei", "qq"],
+            channel_filename_prefix: "channel_",
+            keystore: "release.keystore",
+            keystore_extra_args: "--ks-pass env:app.env --key-alias app",
             clean: true
           )'
         ]
