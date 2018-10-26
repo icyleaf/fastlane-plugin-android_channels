@@ -1,6 +1,8 @@
 require 'fastlane_core/ui/ui'
 require 'shellwords'
 require 'tempfile'
+require 'json'
+require 'yaml'
 require 'zip'
 
 module Fastlane
@@ -121,6 +123,10 @@ module Fastlane
 
       def self.determine_channels!(params)
         channels = params[:channels]
+        if (file = params[:channel_file]) && File.exist?(file)
+          channels.concat(load_channel_file(file))
+        end
+
         UI.user_error!("Empty channels") if channels.size.zero?
         channels.map{|n| n.strip}.uniq
       end
@@ -162,6 +168,19 @@ module Fastlane
         end
 
         nil
+      end
+
+      def self.load_channel_file(file)
+        content = File.read(file)
+        case File.extname(file)
+        when ".json"
+          JSON.load(content).to_a
+        when ".yaml", ".yml"
+          YAML.load(content).to_a
+        else
+          # 安装纯文本解析
+          content.gsub(/(\s|\n)+/, ",").split(",").select {|n| n && !n.empty?}
+        end
       end
 
       def self.build_tools_path(android_sdk_path, version = nil)

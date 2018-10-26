@@ -38,13 +38,13 @@ module Fastlane
           mask_keys: %i[keystore_password key_password]
         )
 
-        Helper::AndroidChannelsHelper.packing_apk(apk_file, channels, output_path, {
-          apksigner: apksigner,
-          apksigner_args: apksigner_args,
-          prefix: params[:channel_filename_prefix],
-          suffix: params[:channel_filename_suffix],
-          verify: params[:verify]
-        })
+        # Helper::AndroidChannelsHelper.packing_apk(apk_file, channels, output_path, {
+        #   apksigner: apksigner,
+        #   apksigner_args: apksigner_args,
+        #   prefix: params[:channel_filename_prefix],
+        #   suffix: params[:channel_filename_suffix],
+        #   verify: params[:verify]
+        # })
 
         # total = Dir["#{output_path}/*"].size
         # UI.success "Packaged done, total: #{total} apk file(s)."
@@ -80,8 +80,14 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :channels,
                                   env_name: "ANDROID_CHANNELS_CHANNELS",
                                description: "The key password of keystore",
-                                  optional: false,
+                                  optional: true,
+                             default_value: [],
                                       type: Array),
+          FastlaneCore::ConfigItem.new(key: :channel_file,
+                                  env_name: "ANDROID_CHANNELS_CHANNEL_FILE",
+                               description: "The path of channel file, accepts json, yaml and plain text file (split with space, comma and newline)",
+                                  optional: true,
+                                      type: String),
           FastlaneCore::ConfigItem.new(key: :channel_filename_prefix,
                                   env_name: "ANDROID_CHANNELS_CHANNEL_FILENAME_PREFIX",
                                description: "The prefix of empty channel file to write to METE-INF folder",
